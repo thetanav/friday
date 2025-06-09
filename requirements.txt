@@ -1,3 +1,0 @@
-pyttsx3
-google-generativeai
-SpeechRecognition

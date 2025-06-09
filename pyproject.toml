@@ -1,0 +1,12 @@
+[project]
+name = "friday"
+version = "0.1.0"
+description = "A personal AI for Tanav."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic-ai>=0.2.16",
+    "python-dotenv>=1.1.0",
+    "pyttsx3>=2.98",
+    "speechrecognition>=3.14.3",
+]

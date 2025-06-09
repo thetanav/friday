@@ -4,10 +4,11 @@ import pyttsx3
 from datetime import datetime
 from dotenv import load_dotenv
 import speech_recognition as sr
-from pydantic_ai import Agent, Tool
+from pydantic_ai import Agent
 from pydantic import BaseModel, Field
 
 load_dotenv()
+
 
 # Define a Pydantic model for structured AI responses
 class FridayResponse(BaseModel):
@@ -16,7 +17,7 @@ class FridayResponse(BaseModel):
 
 # Initialize the PydanticAI agent
 agent = Agent(
-    "google-gla:gemini-2.5-flash",
+    "google-gla:gemini-2.0-flash-lite",
     system_prompt="You are a personal AI for your master Tanav. Tanav made you with python and his sheer briliance. You owner is pro level coder as personal AI you always respond in short adn concise manner. Mainly for help. You can also tell the current time if asked.",
     output_type=FridayResponse,
 )
