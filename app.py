@@ -1,15 +1,31 @@
-import speech_recognition as sr
-import google.generativeai as genai
 import time
+import asyncio
 import pyttsx3
+from datetime import datetime
+from dotenv import load_dotenv
+import speech_recognition as sr
+from pydantic_ai import Agent, Tool
+from pydantic import BaseModel, Field
 
-# Configure API key
-genai.configure(api_key="AIzaSyBgtKEnKjwITUud_DMJ0k3uj7IYJuk39pQ")
+load_dotenv()
 
-model = genai.GenerativeModel(
-    system_instruction="You are a personal AI for your master Tanav. Tanav made you with python and his sheer briliance. You owner is pro level coder as personal AI you always respond in short adn concise manner. Mainly for help.",
-    model_name="gemini-2.5-flash-preview-05-20",
+# Define a Pydantic model for structured AI responses
+class FridayResponse(BaseModel):
+    text: str = Field(description="The concise and helpful response from Friday.")
+
+
+# Initialize the PydanticAI agent
+agent = Agent(
+    "google-gla:gemini-2.5-flash",
+    system_prompt="You are a personal AI for your master Tanav. Tanav made you with python and his sheer briliance. You owner is pro level coder as personal AI you always respond in short adn concise manner. Mainly for help. You can also tell the current time if asked.",
+    output_type=FridayResponse,
 )
+
+
+@agent.tool
+async def get_current_time() -> str:
+    """Returns the current time."""
+    return datetime.now().strftime("%H:%M:%S")
 
 
 def tts(text):
@@ -26,32 +42,25 @@ def test():
     tts("Hello how are you Tanav!")
 
 
-def main():
-    # history = []
-    print("Listening Active...")
+async def main():
     with sr.Microphone() as source:
         audio = r.listen(source)
 
     try:
         text = r.recognize_google(audio)
         print(">>> Tanav:", text)
-        # history.append({"role": "user", "text": text})
-        llmres = ""
-        for chunk in model.generate_content(text, stream=False):
-            try:
-                llmres += chunk.text
-                tts(chunk.text)
-            except IndexError:
-                pass
-        # history.append({"role": "assistant", "text": llmres})
-        print(">>> Friday:", llmres)
-    except Exception as _:
+        result = await agent.run(text)
+        friday_response = result.output.text
+        tts(friday_response)
+        print(">>> Friday:", friday_response)
+    except Exception as e:
+        print(f"Error: {e}")
         pass
-        # print("No Audio")
     time.sleep(0.5)
 
 
 if __name__ == "__main__":
     # test()
+    print(">>> Listening Active...")
     while True:
-        main()
+        asyncio.run(main())
