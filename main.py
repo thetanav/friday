@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
+running = True  # Global flag to control the main loop
+
 
 # Define a Pydantic model for structured AI responses
 class FridayResponse(BaseModel):
@@ -63,5 +65,10 @@ async def main():
 if __name__ == "__main__":
     # test()
     print(">>> Listening Active...")
-    while True:
-        asyncio.run(main())
+    while running:
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            print("\n>>> Shutting down...")
+            running = False
+            break  # Exit the loop immediately
