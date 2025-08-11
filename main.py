@@ -43,28 +43,13 @@ async def recognize_speech_once() -> str | None:
 async def run_loop():
     """Main loop using a single long-lived asyncio event loop."""
 
-    # Optional modes for easier testing or environments without mic
-    text_mode = os.environ.get("FRIDAY_TEXT_MODE") == "1"
-    oneshot_text = os.environ.get("FRIDAY_ONESHOT_TEXT")
-
-    if oneshot_text:
-        print(">>>", oneshot_text)
-        result = await agent.run(oneshot_text)
-        friday_response = result.output.text
-        print("    Friday:", friday_response)
-        await tts(friday_response)
-        return
-
     print(">>> Listening Active... (Ctrl+C to stop)")
     while True:
         try:
-            if text_mode:
-                try:
-                    user_text = await asyncio.to_thread(input, ">>> ")
-                except EOFError:
-                    break
-            else:
+            try:
                 user_text = await recognize_speech_once()
+            except EOFError:
+                break
 
             if not user_text:
                 await asyncio.sleep(0.1)
