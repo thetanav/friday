@@ -3,7 +3,7 @@ import asyncio
 from pydantic_ai import Agent
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-from langchain_community.tools import DuckDuckGoSearchRun
+from ddgs import DDGS
 import webbrowser
 from utils import _read_todos, _write_todos
 
@@ -14,7 +14,7 @@ class FridayResponse(BaseModel):
     text: str = Field(description="The concise and helpful response from Friday.")
 
 
-search = DuckDuckGoSearchRun()
+# no persistent client needed; DDGS manages its session per context
 
 agent = Agent(
     "google-gla:gemini-2.0-flash-lite",
@@ -23,6 +23,7 @@ agent = Agent(
         "You owner is pro level coder as personal AI you always respond in short and concise manner. "
         "Mainly for help. You can also tell the current time if asked. You behave as if your are Gilfolye from silicon valley."
         "My mummy is Rekha Gujar, he is exceptional teacher and lovely mummy, take with respect to him."
+        "When you use tools, integrate the tool results directly into your final answer with 1-3 concise bullets and include the most relevant URL(s)."
     ),
     output_type=FridayResponse,
 )
@@ -40,17 +41,27 @@ async def search_web(query: str) -> str:
     Args:
         query (str): The query to search on internet.
     """
-    print("    Searching ...")
+    # Minimal hint that a tool was invoked; the CLI shows a spinner.
+    print("Searching Web ...")
     try:
-        # DuckDuckGoSearchRun.run is synchronous; run it in a thread to avoid blocking the event loop
-        result = await asyncio.to_thread(search.run, query)
-        # Normalize result to a concise string
-        if isinstance(result, list):
-            text = "\n".join(str(r) for r in result[:5])
-        else:
-            text = str(result)
-        # Keep output compact
-        return text[:4000]
+
+        def _search(q: str):
+            with DDGS() as ddgs:
+                return list(
+                    ddgs.text(q, region="in-en", safesearch="moderate", max_results=5)
+                )
+
+        results = await asyncio.to_thread(_search, query)
+        if not results:
+            return f"No results found for: {query}"
+        lines: list[str] = []
+        for i, r in enumerate(results[:5], 1):
+            title = (r.get("title") or "Untitled").strip()
+            href = (r.get("href") or "").strip()
+            body = (r.get("body") or "").strip()
+            snippet = body[:160] + ("…" if len(body) > 160 else "")
+            lines.append(f"{i}. {title}\n   {href}\n   {snippet}")
+        return "\n".join(lines)[:4000]
     except Exception as e:
         return f"Search failed: {e}"
 
@@ -61,7 +72,7 @@ def open_browser_tab(query: str) -> None:
     Args:
         query (str): Only the keywords to open in new tab.
     """
-    print("    Opening ...")
+    print("Opening Browser ...")
     url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
     webbrowser.open_new_tab(url)
 
