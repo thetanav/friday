@@ -4,6 +4,7 @@ from collections import deque
 from utils import tts
 import speech_recognition as sr
 from agent import agent
+from agent import whatsapp_send_now as _wa_send_now
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
@@ -255,3 +256,24 @@ if __name__ == "__main__":
     else:
         _windows_loop_patch()
         asyncio.run(run_loop())
+
+
+# ---- WhatsApp CLI ----
+
+whatsapp = typer.Typer(help="WhatsApp tools using pywhatkit")
+
+
+@whatsapp.command(
+    "send-now", help="Send a WhatsApp message immediately via WhatsApp Web"
+)
+def wa_send_now(
+    phone: str = typer.Argument(..., help="Phone in E.164, e.g., +919876543210"),
+    message: str = typer.Argument(..., help="Message text"),
+):
+    res = _wa_send_now(phone, message)
+    console.print(
+        Panel.fit(res, title="WhatsApp", border_style="green", box=box.ROUNDED)
+    )
+
+
+app.add_typer(whatsapp, name="whatsapp")

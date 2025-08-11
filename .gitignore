@@ -3,3 +3,4 @@
 uv.lock
 build
 todos.csv
+__pycache__

@@ -7,6 +7,11 @@ from ddgs import DDGS
 import webbrowser
 from utils import _read_todos, _write_todos
 
+try:
+    import pywhatkit as pwk  # type: ignore
+except Exception:  # pragma: no cover - optional dependency at runtime
+    pwk = None  # type: ignore
+
 load_dotenv()
 
 
@@ -14,10 +19,8 @@ class FridayResponse(BaseModel):
     text: str = Field(description="The concise and helpful response from Friday.")
 
 
-# no persistent client needed; DDGS manages its session per context
-
 agent = Agent(
-    "google-gla:gemini-2.0-flash-lite",
+    "google-gla:gemini-2.5-flash-lite",
     system_prompt=(
         "You are a personal AI for your master Tanav. Tanav made you with python and his sheer briliance. "
         "You owner is pro level coder as personal AI you always respond in short and concise manner. "
@@ -124,3 +127,34 @@ def show_todo_items() -> list[str]:
         list[str]: A list of all todo items.
     """
     return _read_todos()
+
+
+@agent.tool_plain()
+def whatsapp_send_now(phone_e164: str, message: str) -> str:
+    """Send a WhatsApp message immediately via web.whatsapp.com
+        to send message to the person use number given below.
+
+    Papa number: "+919983337125"
+    Mummy number: "+919261188538"
+
+    Args:
+        phone_e164: Recipient phone number.
+        message: The message text to send.
+
+    Notes:
+        - This opens web.whatsapp.com in the default browser and attempts to send.
+        - Ensure you're logged in to WhatsApp Web.
+    """
+    phone = (phone_e164 or "").strip()
+    if not phone.startswith("+") or len(phone) < 8:
+        return "Provide phone in E.164 format, e.g., +919876543210"
+    if not (message or "").strip():
+        return "Message cannot be empty"
+    if pwk is None:
+        return "pywhatkit is not available; install dependencies and try again"
+    try:
+        print("[tool] Opening WhatsApp Web…")
+        pwk.sendwhatmsg_instantly(phone_no=phone, message=message, tab_close=True)
+        return f"Sent WhatsApp message to {phone}"
+    except Exception as e:
+        return f"Failed to send WhatsApp message: {e}"
