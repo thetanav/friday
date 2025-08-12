@@ -30,9 +30,6 @@ async def recognize_speech_once() -> str | None:
             audio = r.listen(source)
         try:
             return r.recognize_google(audio)
-        except sr.UnknownValueError:
-            console.print("[yellow]Didn’t catch that. Try again…[/]")
-            return None
         except sr.RequestError as e:
             console.print(
                 Panel(
@@ -75,12 +72,13 @@ async def run_loop():
     while True:
         try:
             try:
-                user_text = await recognize_speech_once()
+                with console.status("Listening...", spinner="dots"):
+                    user_text = await recognize_speech_once()
             except EOFError:
                 break
 
             if not user_text:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.2)
                 continue
 
             # Show user's recognized text
@@ -112,7 +110,7 @@ async def run_loop():
             # Await the async agent call with contextual prompt
             # Show a spinner while Friday is thinking
             # Minimal tool breadcrumbs: the tools print lines starting with [tool]
-            with console.status("Thinking…", spinner="dots"):
+            with console.status("Thinking...", spinner="dots"):
                 result = await agent.run(contextual_prompt)
             friday_response = result.output.text
             await tts(friday_response)
@@ -127,6 +125,9 @@ async def run_loop():
 
             # Update history
             history.append((user_text, friday_response))
+        except asyncio.CancelledError:
+            # Graceful cancellation (e.g., Ctrl+C during asyncio.run)
+            break
         except KeyboardInterrupt:
             console.print("\n[dim]Shutting down…[/]")
             break
@@ -151,10 +152,35 @@ def _windows_loop_patch():
             pass
 
 
+def _suppress_keyboard_interrupt_traceback():
+    """Silence the noisy traceback/aborted message on Ctrl+C for a clean exit."""
+    default_hook = sys.excepthook
+
+    def _quiet_hook(exc_type, exc, tb):
+        if exc_type is KeyboardInterrupt:
+            # Quietly exit; no traceback, no extra noise
+            return
+        return default_hook(exc_type, exc, tb)
+
+    sys.excepthook = _quiet_hook
+
+
 if __name__ == "__main__":
     # Backward-compatible default: no args -> listen, else CLI
+    _suppress_keyboard_interrupt_traceback()
     if len(sys.argv) > 1:
-        app()
+        # Run Typer app without Click's default "Aborted!" message on Ctrl+C
+        try:
+            app(standalone_mode=False)
+        except KeyboardInterrupt:
+            pass
+        except SystemExit:
+            # Respect normal exits from Typer
+            pass
     else:
         _windows_loop_patch()
-        asyncio.run(run_loop())
+        try:
+            asyncio.run(run_loop())
+        except KeyboardInterrupt:
+            # Silent, fast exit on Ctrl+C
+            pass
