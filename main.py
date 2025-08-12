@@ -4,17 +4,15 @@ from collections import deque
 from utils import tts
 import speech_recognition as sr
 from agent import agent
-from agent import whatsapp_send_now as _wa_send_now
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
 import typer
-from rich.prompt import Prompt
 
 
 running = True  # Global flag to control the main loop (kept for compatibility)
 console = Console()
-app = typer.Typer(help="Friday CLI – voice and text modes")
+app = typer.Typer(help="Friday CLI")
 
 
 r = sr.Recognizer()
@@ -28,7 +26,6 @@ async def recognize_speech_once() -> str | None:
             try:
                 r.adjust_for_ambient_noise(source, duration=0.3)
             except Exception:
-                # Ambient noise adjustment is best-effort
                 pass
             audio = r.listen(source)
         try:
@@ -118,6 +115,7 @@ async def run_loop():
             with console.status("Thinking…", spinner="dots"):
                 result = await agent.run(contextual_prompt)
             friday_response = result.output.text
+            await tts(friday_response)
             console.print(
                 Panel.fit(
                     friday_response,
@@ -126,12 +124,9 @@ async def run_loop():
                     box=box.ROUNDED,
                 )
             )
-            await tts(friday_response)
 
             # Update history
             history.append((user_text, friday_response))
-
-            await asyncio.sleep(0.1)
         except KeyboardInterrupt:
             console.print("\n[dim]Shutting down…[/]")
             break
@@ -148,105 +143,12 @@ async def run_loop():
             await asyncio.sleep(0.5)
 
 
-# ----- CLI commands -----
-
-
 def _windows_loop_patch():
     if sys.platform.startswith("win"):
         try:
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         except Exception:
             pass
-
-
-@app.command(help="Start voice listening mode")
-def listen():
-    _windows_loop_patch()
-    asyncio.run(run_loop())
-
-
-@app.command(help="Ask Friday a one-off question")
-def ask(
-    question: str = typer.Argument(..., help="Your question"),
-    speak: bool = typer.Option(False, "--speak", help="Read the reply aloud"),
-):
-    _windows_loop_patch()
-
-    async def _run():
-        try:
-            with console.status("Thinking…", spinner="dots"):
-                res = await agent.run(question)
-            reply = res.output.text
-            console.print(
-                Panel.fit(reply, title="Friday", border_style="cyan", box=box.ROUNDED)
-            )
-            if speak:
-                await tts(reply)
-        except KeyboardInterrupt:
-            console.print("[dim]Cancelled.[/]")
-
-    asyncio.run(_run())
-
-
-@app.command(help="Interactive text chat session")
-def chat(speak: bool = typer.Option(False, "--speak", help="Read replies aloud")):
-    _windows_loop_patch()
-
-    console.print(
-        Panel(
-            "Type messages to chat with Friday. Press q to quit. Ctrl+C cancels a reply.",
-            title="Friday Chat",
-            border_style="magenta",
-            box=box.ROUNDED,
-        )
-    )
-    history: deque[tuple[str, str]] = deque(maxlen=10)
-
-    async def _loop():
-        while True:
-            try:
-                user = Prompt.ask("You")
-            except (EOFError, KeyboardInterrupt):
-                console.print("\n[dim]Bye.[/]")
-                break
-
-            if not user.strip():
-                continue
-            if user.strip().lower() in {"q", ":q", "/q", "quit", "exit"}:
-                console.print("[dim]Bye.[/]")
-                break
-
-            if history:
-                convo = "\n".join(f"User: {u}\nFriday: {a}" for u, a in history)
-            else:
-                convo = "(no prior context)"
-            if len(convo) > 4000:
-                convo = convo[-4000:]
-
-            contextual_prompt = (
-                "You are in an ongoing conversation.\n"
-                "Conversation so far:\n"
-                f"{convo}\n\n"
-                f"Current user message: {user}\n"
-                "Respond as Friday, concise and helpful."
-            )
-
-            try:
-                with console.status("Thinking…", spinner="dots"):
-                    res = await agent.run(contextual_prompt)
-                reply = res.output.text
-                console.print(
-                    Panel.fit(
-                        reply, title="Friday", border_style="cyan", box=box.ROUNDED
-                    )
-                )
-                if speak:
-                    await tts(reply)
-                history.append((user, reply))
-            except KeyboardInterrupt:
-                console.print("[dim]Cancelled.[/]")
-
-    asyncio.run(_loop())
 
 
 if __name__ == "__main__":
@@ -256,24 +158,3 @@ if __name__ == "__main__":
     else:
         _windows_loop_patch()
         asyncio.run(run_loop())
-
-
-# ---- WhatsApp CLI ----
-
-whatsapp = typer.Typer(help="WhatsApp tools using pywhatkit")
-
-
-@whatsapp.command(
-    "send-now", help="Send a WhatsApp message immediately via WhatsApp Web"
-)
-def wa_send_now(
-    phone: str = typer.Argument(..., help="Phone in E.164, e.g., +919876543210"),
-    message: str = typer.Argument(..., help="Message text"),
-):
-    res = _wa_send_now(phone, message)
-    console.print(
-        Panel.fit(res, title="WhatsApp", border_style="green", box=box.ROUNDED)
-    )
-
-
-app.add_typer(whatsapp, name="whatsapp")

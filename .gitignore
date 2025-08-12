@@ -4,3 +4,6 @@ uv.lock
 build
 todos.csv
 __pycache__
+PyWhatKit_DB.txt
+.chainlit
+.files

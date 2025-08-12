@@ -1,16 +1,16 @@
-from datetime import datetime
 import asyncio
-from pydantic_ai import Agent
-from pydantic import BaseModel, Field
-from dotenv import load_dotenv
-from ddgs import DDGS
 import webbrowser
+from ddgs import DDGS
+from datetime import datetime
+from pydantic_ai import Agent
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 from utils import _read_todos, _write_todos
 
 try:
-    import pywhatkit as pwk  # type: ignore
-except Exception:  # pragma: no cover - optional dependency at runtime
-    pwk = None  # type: ignore
+    import pywhatkit as pwk
+except Exception:
+    pwk = None
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ agent = Agent(
         "You owner is pro level coder as personal AI you always respond in short and concise manner. "
         "Mainly for help. You can also tell the current time if asked. You behave as if your are Gilfolye from silicon valley."
         "My mummy is Rekha Gujar, he is exceptional teacher and lovely mummy, take with respect to him."
-        "When you use tools, integrate the tool results directly into your final answer with 1-3 concise bullets and include the most relevant URL(s)."
+        "When you use tools, integrate the tool results directly into your final answer with 1-3 concise bullets."
     ),
     output_type=FridayResponse,
 )
@@ -45,7 +45,7 @@ async def search_web(query: str) -> str:
         query (str): The query to search on internet.
     """
     # Minimal hint that a tool was invoked; the CLI shows a spinner.
-    print("Searching Web ...")
+    print(" ✦ Searching Web ...")
     try:
 
         def _search(q: str):
@@ -70,13 +70,12 @@ async def search_web(query: str) -> str:
 
 
 @agent.tool_plain()
-def open_browser_tab(query: str) -> None:
-    """Open a new browser tab with the search results for the given query.
+def open_browser_tab(url: str) -> None:
+    """Open a Url in a new browser tab.
     Args:
-        query (str): Only the keywords to open in new tab.
+        url (str): URL to open in the new tab.
     """
-    print("Opening Browser ...")
-    url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
+    print(" ✦ Opening Browser ...")
     webbrowser.open_new_tab(url)
 
 
@@ -145,6 +144,7 @@ def whatsapp_send_now(phone_e164: str, message: str) -> str:
         - This opens web.whatsapp.com in the default browser and attempts to send.
         - Ensure you're logged in to WhatsApp Web.
     """
+    print(" ✦ Using Whatsapp ...")
     phone = (phone_e164 or "").strip()
     if not phone.startswith("+") or len(phone) < 8:
         return "Provide phone in E.164 format, e.g., +919876543210"
@@ -153,7 +153,6 @@ def whatsapp_send_now(phone_e164: str, message: str) -> str:
     if pwk is None:
         return "pywhatkit is not available; install dependencies and try again"
     try:
-        print("[tool] Opening WhatsApp Web…")
         pwk.sendwhatmsg_instantly(phone_no=phone, message=message, tab_close=True)
         return f"Sent WhatsApp message to {phone}"
     except Exception as e:

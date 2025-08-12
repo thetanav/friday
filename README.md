@@ -4,7 +4,7 @@ A personal AI for Tanav.
 
 ## CLI
 
-This repo now includes a simple, good-looking CLI powered by Typer + Rich.
+This repo now includes a simple, good-looking CLI powered by Typer + Rich and GUI with chainlit
 
 Install deps and run:
 
