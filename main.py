@@ -96,8 +96,8 @@ async def run_loop():
                 convo = "(no prior context)"
 
             # Trim context to a safe size (defensive against very long turns)
-            if len(convo) > 4000:
-                convo = convo[-4000:]
+            if len(convo) > 1000:
+                convo = convo[-1000:]
 
             contextual_prompt = (
                 "You are in an ongoing conversation.\n"
@@ -107,9 +107,6 @@ async def run_loop():
                 "Respond as Friday, concise and helpful."
             )
 
-            # Await the async agent call with contextual prompt
-            # Show a spinner while Friday is thinking
-            # Minimal tool breadcrumbs: the tools print lines starting with [tool]
             with console.status("Thinking...", spinner="dots"):
                 result = await agent.run(contextual_prompt)
             friday_response = result.output.text
@@ -126,7 +123,7 @@ async def run_loop():
             # Update history
             history.append((user_text, friday_response))
         except asyncio.CancelledError:
-            # Graceful cancellation (e.g., Ctrl+C during asyncio.run)
+            console.print("\n[dim]Shutting down…[/]")
             break
         except KeyboardInterrupt:
             console.print("\n[dim]Shutting down…[/]")

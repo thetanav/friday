@@ -7,6 +7,8 @@ from pathlib import Path
 def _tts_blocking(text: str) -> None:
     """Blocking TTS using pyttsx3."""
     engine = pyttsx3.init()
+    voices = engine.getProperty("voices")
+    engine.setProperty("voice", voices[1].id)
     engine.setProperty("rate", 180)
     engine.setProperty("volume", 0.9)
     engine.say(text)

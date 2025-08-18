@@ -1,5 +1,7 @@
 import asyncio
 import webbrowser
+import time
+import requests
 from ddgs import DDGS
 from datetime import datetime
 from pydantic_ai import Agent
@@ -30,6 +32,49 @@ agent = Agent(
     ),
     output_type=FridayResponse,
 )
+
+
+@agent.tool_plain()
+def get_tech_news_brief() -> str:
+    """Fetch the latest technology news from Hacker News - ultra brief version."""
+    print(" ✦ Fetching Brief Tech News ...")
+
+    try:
+        # Get top stories
+        top_stories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+        response = requests.get(top_stories_url, timeout=10)
+        response.raise_for_status()
+
+        story_ids = response.json()[:3]  # Get top 3 for brevity
+
+        brief_stories = []
+        for story_id in story_ids:
+            story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
+            story_response = requests.get(story_url, timeout=5)
+
+            if story_response.status_code == 200:
+                story_data = story_response.json()
+
+                if story_data and story_data.get("type") == "story":
+                    title = story_data.get("title", "No title")
+                    # Remove common prefixes for brevity
+                    title = title.replace("Ask HN: ", "").replace("Show HN: ", "")
+                    brief_stories.append(title)
+
+                    if len(brief_stories) >= 3:
+                        break
+
+            time.sleep(0.1)
+
+        if not brief_stories:
+            return "No tech stories available."
+
+        # Ultra-brief format for voice
+        result = "Top tech stories: " + "; ".join(brief_stories)
+        return result
+
+    except Exception as e:
+        return "Unable to fetch tech news right now."
 
 
 @agent.tool_plain()

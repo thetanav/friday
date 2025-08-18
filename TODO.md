@@ -1,3 +1,4 @@
 [-] Whatsapp mcp server
 [ ] Eleven labs voice
-[ ] Streamlit UI
+[-] Chainlit UI
+[-] Tech news
