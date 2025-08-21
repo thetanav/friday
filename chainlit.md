@@ -23,7 +23,7 @@ A concise personal AI for Tanav, powered by Gemini 2.5 Flash Lite and running wi
 - Start the app:
 
 ```bash
-uv run chainlit run chainlit.py --watch
+uv run chainlit run chainlit.py
 ```
 
 Notes: ensure required API keys/dependencies are configured in your environment; WhatsApp actions need you signed in to web.whatsapp.com.

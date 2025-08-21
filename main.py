@@ -63,7 +63,7 @@ async def run_loop():
         Panel(
             "Listening Active… (Ctrl+C to stop)",
             title="Friday Listen",
-            border_style="green",
+            border_style="yellow",
             box=box.ROUNDED,
         )
     )
@@ -110,15 +110,8 @@ async def run_loop():
             with console.status("Thinking...", spinner="dots"):
                 result = await agent.run(contextual_prompt)
             friday_response = result.output.text
+            console.print(f"[bold green]Friday[/]  {friday_response}")
             await tts(friday_response)
-            console.print(
-                Panel.fit(
-                    friday_response,
-                    title="Friday",
-                    border_style="cyan",
-                    box=box.ROUNDED,
-                )
-            )
 
             # Update history
             history.append((user_text, friday_response))
@@ -128,17 +121,6 @@ async def run_loop():
         except KeyboardInterrupt:
             console.print("\n[dim]Shutting down…[/]")
             break
-        except Exception as e:
-            # Keep the loop alive on transient errors
-            console.print(
-                Panel(
-                    f"Error occurred:\n{e}",
-                    title="Friday",
-                    border_style="red",
-                    box=box.ROUNDED,
-                )
-            )
-            await asyncio.sleep(0.5)
 
 
 def _windows_loop_patch():

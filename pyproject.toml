@@ -8,7 +8,6 @@ dependencies = [
     "ddgs>=9.5.2",
     "duckduckgo-search>=8.1.1",
     "langchain-community>=0.3.27",
-    "pyaudio>=0.2.14",
     "pydantic-ai>=0.2.16",
     "python-dotenv>=1.1.0",
     "pyttsx3>=2.98",
@@ -17,6 +16,7 @@ dependencies = [
     "rich>=13.7.1",
     "pywhatkit>=5.4",
     "chainlit>=1.2.0",
+    "pyaudio>=0.2.14",
 ]
 
 [project.scripts]

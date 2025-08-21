@@ -1,5 +1,6 @@
 import asyncio
 import webbrowser
+import os
 import time
 import requests
 from ddgs import DDGS
@@ -8,6 +9,8 @@ from pydantic_ai import Agent
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from utils import _read_todos, _write_todos
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 try:
     import pywhatkit as pwk
@@ -21,14 +24,28 @@ class FridayResponse(BaseModel):
     text: str = Field(description="The concise and helpful response from Friday.")
 
 
+model = OpenAIModel(
+    "qwen/qwen3-4b:free",
+    provider=OpenRouterProvider(api_key=os.environ["OPENROUTER_API_KEY"]),
+)
+
+# Load KNOWLEDGE.md content as knowledge for the agent
+try:
+    with open("KNOWLEDGE.md", "r", encoding="utf-8") as f:
+        _knowledge = f.read()
+except Exception:
+    _knowledge = ""
+
 agent = Agent(
-    "google-gla:gemini-2.5-flash-lite",
+    # model,
+    "google-gla:gemini-2.0-flash",
     system_prompt=(
         "You are a personal AI for your master Tanav. Tanav made you with python and his sheer briliance. "
         "You owner is pro level coder as personal AI you always respond in short and concise manner. "
         "Mainly for help. You can also tell the current time if asked. You behave as if your are Gilfolye from silicon valley."
-        "My mummy is Rekha Gujar, he is exceptional teacher and lovely mummy, take with respect to him."
+        "My mummy is Rekha Gujar, he is exceptional teacher and lovely mummy, talk with respect to him."
         "When you use tools, integrate the tool results directly into your final answer with 1-3 concise bullets."
+        f"\n# Knowledge:\n{_knowledge}\n"
     ),
     output_type=FridayResponse,
 )
@@ -70,10 +87,10 @@ def get_tech_news_brief() -> str:
             return "No tech stories available."
 
         # Ultra-brief format for voice
-        result = "Top tech stories: " + "; ".join(brief_stories)
+        result = "Top tech stories: " + "next;".join(brief_stories)
         return result
 
-    except Exception as e:
+    except Exception:
         return "Unable to fetch tech news right now."
 
 
@@ -176,7 +193,7 @@ def show_todo_items() -> list[str]:
 @agent.tool_plain()
 def whatsapp_send_now(phone_e164: str, message: str) -> str:
     """Send a WhatsApp message immediately via web.whatsapp.com
-        to send message to the person use number given below.
+        to send message to the person use numbers given.
 
     Papa number: "+919983337125"
     Mummy number: "+919261188538"
