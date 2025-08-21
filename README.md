@@ -12,6 +12,17 @@ This repo now includes a simple, good-looking CLI powered by Pydantic AI and GUI
 - Open browser
 - Save todos in `todos.csv`
 
+## TODOs
+
+Things I have to work on:
+
+- [x] Whatsapp mcp server
+- [ ] Eleven labs voice
+- [x] Chainlit UI
+- [x] Tech news
+- [x] private knowledge
+- [ ] streaming
+
 ## Project Structure
 
 - `agent.py` — the agent that runs the AI
@@ -40,14 +51,3 @@ uv run main.py
 ```bash
 uv run chainlit run chainlit.py
 ```
-
-## TODOs
-
-Things I have to work on:
-
-[-] Whatsapp mcp server
-[ ] Eleven labs voice
-[-] Chainlit UI
-[-] Tech news
-[-] private knowledge
-[ ] streaming
